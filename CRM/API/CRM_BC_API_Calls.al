@@ -1273,7 +1273,7 @@ codeunit 50102 APICalls
                         if ResponseMessage.IsSuccessStatusCode then begin
                             if ResponseMessage.ReasonPhrase = 'Created' then begin
 
-                                //Sales Lines Cretion from BC to CRM
+                                //Sales Lines Creation from BC to CRM
                                 ResponseMessage.Content().ReadAs(salesOrderResponse);
                                 Clear(jObject1);
                                 jObject1.ReadFrom(salesOrderResponse);
@@ -1566,135 +1566,164 @@ codeunit 50102 APICalls
         crmitemuofmid: Text;
         crmitemuofmscheduleid: Text;
         uofmApi: Text;
+        syncStatus: Enum HelixEntitySyncStatus;
     begin
         sheader.Init();
         sheader.SetRange("Document Type", sheader."Document Type"::Quote);
-        sheader.FindLast();
+        //sheader.FindLast();
+        sheader.SetRange(SyncStatus, syncStatus::Pending);
 
-        //JObject.Add('ordernumber', Random(9999));
-        bcSalesOrderNo := sheader."No.";
-        JObject.Add('quotenumber', sheader."No.");
-        cust.Reset();
-        cust.SetRange("No.", sheader."Sell-to Customer No.");
-        cust.FindFirst();
-        //JObject.Add('customerid_contact@odata.bind', 'contacts/' + cust."Home Page");
-        JObject.Add('customerid_contact@odata.bind', 'contacts/' + cust.CrmContactSchemaId);
-        JObject.Add('name', cust.Name);
-        JObject.Add('billto_line1', sheader."Sell-to Address");
-        JObject.Add('billto_line2', sheader."Sell-to Address 2");
-        JObject.Add('billto_city', sheader."Sell-to City");
-        JObject.Add('billto_stateorprovince', sheader."Sell-to County");
-        JObject.Add('billto_postalcode', sheader."Sell-to Post Code");
-        JObject.Add('billto_country', sheader."Sell-to Country/Region Code");
+        if sheader.FindSet() then begin
+            repeat begin
+                Clear(JObject);
+                Clear(httpbodyContent);
+                Clear(RequestHeaders);
+                Clear(RequestMessage);
+                Clear(Client);
+                Clear(ResponseMessage);
+                Clear(isSalesOrderPostCallSuccess);
+                Clear(jToken);
+                Clear(sline);
+                if sheader."No." <> '' then begin
+                    sheader.Validate(SyncStatus, syncStatus::InProcess);
 
-        JObject.Add('shipto_line1', sheader."Ship-to Address");
-        JObject.Add('shipto_line2', sheader."Ship-to Address 2");
-        JObject.Add('shipto_city', sheader."Ship-to City");
-        JObject.Add('shipto_stateorprovince', sheader."Ship-to County");
-        JObject.Add('shipto_postalcode', sheader."Ship-to Post Code");
-        JObject.Add('shipto_country', sheader."Ship-to Country/Region Code");
+                    //JObject.Add('ordernumber', Random(9999));
+                    bcSalesOrderNo := sheader."No.";
+                    JObject.Add('quotenumber', sheader."No.");
+                    cust.Reset();
+                    cust.SetRange("No.", sheader."Sell-to Customer No.");
+                    cust.FindFirst();
+                    //JObject.Add('customerid_contact@odata.bind', 'contacts/' + cust."Home Page");
+                    JObject.Add('customerid_contact@odata.bind', 'contacts/' + cust.CrmContactSchemaId);
+                    JObject.Add('name', cust.Name);
+                    JObject.Add('billto_line1', sheader."Sell-to Address");
+                    JObject.Add('billto_line2', sheader."Sell-to Address 2");
+                    JObject.Add('billto_city', sheader."Sell-to City");
+                    JObject.Add('billto_stateorprovince', sheader."Sell-to County");
+                    JObject.Add('billto_postalcode', sheader."Sell-to Post Code");
+                    JObject.Add('billto_country', sheader."Sell-to Country/Region Code");
 
-        //JObject.Add('shippingmethodcode', 2);
+                    JObject.Add('shipto_line1', sheader."Ship-to Address");
+                    JObject.Add('shipto_line2', sheader."Ship-to Address 2");
+                    JObject.Add('shipto_city', sheader."Ship-to City");
+                    JObject.Add('shipto_stateorprovince', sheader."Ship-to County");
+                    JObject.Add('shipto_postalcode', sheader."Ship-to Post Code");
+                    JObject.Add('shipto_country', sheader."Ship-to Country/Region Code");
 
-        jObject.WriteTo(salesOrderInfo);
+                    //JObject.Add('shippingmethodcode', 2);
 
-        httpbodyContent.Clear();
-        httpbodyContent.WriteFrom(salesOrderInfo);
-        httpbodyContent.GetHeaders(RequestHeaders);
+                    jObject.WriteTo(salesOrderInfo);
 
-        RequestHeaders.Remove('Content-Type');
-        RequestHeaders.Add('Content-Type', 'application/json');
-        RequestHeaders.Add('Prefer', 'return=representation');
+                    httpbodyContent.Clear();
+                    httpbodyContent.WriteFrom(salesOrderInfo);
+                    httpbodyContent.GetHeaders(RequestHeaders);
 
-        RequestMessage.Method := 'POST';
-        RequestMessage.SetRequestUri(RequestUrl);
-        RequestMessage.GetHeaders(RequestHeaders);
-        RequestMessage.Content := httpbodyContent;
+                    RequestHeaders.Remove('Content-Type');
+                    RequestHeaders.Add('Content-Type', 'application/json');
+                    RequestHeaders.Add('Prefer', 'return=representation');
 
-        Client.DefaultRequestHeaders().Add('Authorization', 'Bearer ' + AccessToken);
+                    RequestMessage.Method := 'POST';
+                    RequestMessage.SetRequestUri(RequestUrl);
+                    RequestMessage.GetHeaders(RequestHeaders);
+                    RequestMessage.Content := httpbodyContent;
 
-        isSalesOrderPostCallSuccess := Client.Post(RequestUrl, httpbodyContent, ResponseMessage);
+                    Client.DefaultRequestHeaders().Add('Authorization', 'Bearer ' + AccessToken);
 
-        ResponseMessage.Content().ReadAs(salesOrderResponse);
-        Clear(jObject1);
-        jObject1.ReadFrom(salesOrderResponse);
+                    isSalesOrderPostCallSuccess := Client.Post(RequestUrl, httpbodyContent, ResponseMessage);
 
-        if isSalesOrderPostCallSuccess then begin
-            if ResponseMessage.IsSuccessStatusCode then begin
-                if ResponseMessage.ReasonPhrase = 'Created' then begin
-
-                    //Sales Lines Cretion from BC to CRM
                     ResponseMessage.Content().ReadAs(salesOrderResponse);
                     Clear(jObject1);
                     jObject1.ReadFrom(salesOrderResponse);
-                    jObject1.get('quoteid', jToken);
-                    crmSalesOrderSchemaId := jToken.AsValue().AsText();
 
-                    sline.SetRange("Document Type", sheader."Document Type"::Quote);
-                    //sline.SetRange("Document No.", sheader."No.");
-                    sline.Validate("Document No.", sheader."No.");
-                    sline.SetRange("Document No.", sheader."No.");
-                    sline.Validate("Sell-to Customer No.", sHeader."Sell-to Customer No.");
-                    sline.Validate(Type, sline.Type::Item);
-                    sline.FindSet();
-                    repeat begin
-                        item.Reset();
-                        item.SetRange("No.", sline."No.");
-                        item.FindFirst();
-                        crmItemSchemaId := item.CrmItemSchemaId;
-                        crmitemuofmid := item.CrmUofmId;
-                        crmitemuofmscheduleid := item.CrmUofmScheduleId;
+                    if isSalesOrderPostCallSuccess then begin
+                        if ResponseMessage.IsSuccessStatusCode then begin
+                            if ResponseMessage.ReasonPhrase = 'Created' then begin
 
-                        Clear(jObject2);
-                        jObject2.Add('quoteid@odata.bind', 'quotes/' + crmSalesOrderSchemaId);
-                        //jObject2.Add('productid@odata.bind', 'products/ea17d001-7e9f-ec11-b400-000d3a32003b');
+                                //Sales Lines Cretion from BC to CRM
+                                ResponseMessage.Content().ReadAs(salesOrderResponse);
+                                Clear(jObject1);
+                                jObject1.ReadFrom(salesOrderResponse);
+                                jObject1.get('quoteid', jToken);
+                                crmSalesOrderSchemaId := jToken.AsValue().AsText();
 
-                        productApi := 'products/' + crmItemSchemaId;
-                        jObject2.Add('productid@odata.bind', productApi);
+                                sline.SetRange("Document Type", sheader."Document Type"::Quote);
+                                //sline.SetRange("Document No.", sheader."No.");
+                                sline.Validate("Document No.", sheader."No.");
+                                sline.SetRange("Document No.", sheader."No.");
+                                //sline.Validate("Sell-to Customer No.", sHeader."Sell-to Customer No.");
+                                //sline.Validate(Type, sline.Type::Item);
+                                sline.FindSet();
+                                repeat begin
+                                    if sline."No." <> '' then begin
+                                        Clear(item);
+                                        item.Reset();
+                                        item.SetRange("No.", sline."No.");
+                                        item.FindFirst();
+                                        crmItemSchemaId := item.CrmItemSchemaId;
+                                        crmitemuofmid := item.CrmUofmId;
+                                        crmitemuofmscheduleid := item.CrmUofmScheduleId;
 
-                        jObject2.Add('description', sline.Description);
-                        jObject2.Add('quotedetailname', sline.Description);
-                        jObject2.Add('priceperunit', sline."Unit Price");
-                        jObject2.Add('quantity', sline.Quantity);
+                                        Clear(jObject2);
+                                        jObject2.Add('quoteid@odata.bind', 'quotes/' + crmSalesOrderSchemaId);
+                                        //jObject2.Add('productid@odata.bind', 'products/ea17d001-7e9f-ec11-b400-000d3a32003b');
 
-                        uofmApi := 'uoms/' + crmitemuofmid;
-                        //jObject2.Add('uomid@odata.bind', '/uoms(5c5f4f66-b1a7-ec11-983f-000d3a5b777d)');
-                        jObject2.Add('uomid@odata.bind', uofmApi);
-                    end until sline.Next() = 0;
+                                        productApi := 'products/' + crmItemSchemaId;
+                                        jObject2.Add('productid@odata.bind', productApi);
 
-                    jObject2.WriteTo(salesLinesInfo);
+                                        jObject2.Add('description', sline.Description);
+                                        jObject2.Add('quotedetailname', sline.Description);
+                                        jObject2.Add('priceperunit', sline."Unit Price");
+                                        jObject2.Add('quantity', sline.Quantity);
 
-                    httpbodyContent1.Clear();
-                    httpbodyContent1.WriteFrom(salesLinesInfo);
-                    httpbodyContent1.GetHeaders(RequestHeaders1);
+                                        uofmApi := 'uoms/' + crmitemuofmid;
+                                        //jObject2.Add('uomid@odata.bind', '/uoms(5c5f4f66-b1a7-ec11-983f-000d3a5b777d)');
+                                        jObject2.Add('uomid@odata.bind', uofmApi);
 
-                    RequestHeaders1.Remove('Content-Type');
-                    RequestHeaders1.Add('Content-Type', 'application/json');
-                    RequestHeaders1.Add('Prefer', 'return=representation');
+                                        jObject2.WriteTo(salesLinesInfo);
 
-                    RequestMessage1.Method := 'POST';
-                    RequestMessage1.SetRequestUri(RequestUrl);
-                    RequestMessage1.GetHeaders(RequestHeaders1);
-                    RequestMessage1.Content := httpbodyContent1;
+                                        httpbodyContent1.Clear();
+                                        Clear(RequestHeaders1);
+                                        httpbodyContent1.WriteFrom(salesLinesInfo);
+                                        httpbodyContent1.GetHeaders(RequestHeaders1);
 
-                    Client.Clear();
-                    Client.DefaultRequestHeaders().Add('Authorization', 'Bearer ' + AccessToken);
+                                        RequestHeaders1.Remove('Content-Type');
+                                        RequestHeaders1.Add('Content-Type', 'application/json');
+                                        RequestHeaders1.Add('Prefer', 'return=representation');
 
-                    RequestUrl := 'https://org6a8b2e1b.crm.dynamics.com/api/data/v8.1/quotedetails';
-                    isSalesOrderLinesPostCallSuccess := Client.Post(RequestUrl, httpbodyContent1, ResponseMessage);
+                                        Clear(RequestMessage1);
+                                        RequestMessage1.Method := 'POST';
+                                        RequestMessage1.SetRequestUri(RequestUrl);
+                                        RequestMessage1.GetHeaders(RequestHeaders1);
+                                        RequestMessage1.Content := httpbodyContent1;
 
-                    helixSalesTable.Init();
-                    helixSalesTable.CRMSalesId := bcSalesOrderNo;
-                    helixSalesTable.CRMSalesSchemaId := crmSalesOrderSchemaId;
-                    helixSalesTable.CRMSalesCustomerId := cust.CrmContactSchemaId;
-                    helixSalesTable.BCSalesOrderId := bcSalesOrderNo;
-                    helixSalesTable.SalesOrderType := HelixSalesTypes::SalesQuote;
-                    helixSalesTable.SalesSyncSource := HelixSyncSource::BC;
-                    helixSalesTable.Insert();
+                                        Client.Clear();
+                                        Client.DefaultRequestHeaders().Add('Authorization', 'Bearer ' + AccessToken);
 
-                    Message('Sales Quote %1 Created Successfully in Dynamics CRM', sheader."No.");
+                                        RequestUrl := 'https://org6a8b2e1b.crm.dynamics.com/api/data/v8.1/quotedetails';
+                                        isSalesOrderLinesPostCallSuccess := Client.Post(RequestUrl, httpbodyContent1, ResponseMessage);
+                                    end;
+                                end until sline.Next() = 0;
+
+
+
+                                helixSalesTable.Init();
+                                helixSalesTable.CRMSalesId := bcSalesOrderNo;
+                                helixSalesTable.CRMSalesSchemaId := crmSalesOrderSchemaId;
+                                helixSalesTable.CRMSalesCustomerId := cust.CrmContactSchemaId;
+                                helixSalesTable.BCSalesOrderId := bcSalesOrderNo;
+                                helixSalesTable.SalesOrderType := HelixSalesTypes::SalesQuote;
+                                helixSalesTable.SalesSyncSource := HelixSyncSource::BC;
+                                helixSalesTable.Insert();
+
+                                sheader.SyncStatus := syncStatus::Complete;
+                                sheader.Modify(false);
+
+                                Message('Sales Quote %1 Created Successfully in Dynamics CRM', sheader."No.");
+                            end;
+                        end;
+                    end;
                 end;
-            end;
+            end until sheader.Next() = 0;
         end;
     end;
 
