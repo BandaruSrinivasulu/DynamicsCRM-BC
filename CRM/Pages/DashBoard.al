@@ -316,6 +316,34 @@ page 50100 "Test OAuth2 Flows"
                 end;
             }
 
+            action(SpecialCharacterTest)
+            {
+                ApplicationArea = All;
+                Caption = 'Special Characters Test';
+                PromotedCategory = Process;
+                Promoted = true;
+
+                trigger OnAction()
+                var
+                    cu: Codeunit SpecialCharsTest;
+                    sku: Text;
+                    txt: Text;
+                    reference: Text;
+                    varian: Text;
+                begin
+                    sku := 'SPJ-200-P';
+                    reference := 'SPJ-200';
+                    txt := sku;
+                    varian := sku.Substring(StrLen(reference) + 2);
+                    Message('Variant is :%1', varian);
+                    if cu.ReadProducts() then begin
+                        Message('Success');
+                    end else begin
+                        Message('Code Unit Method Failed to Run: \Error Code: %1\Error Text: %2\Error Stack: %3', GetLastErrorCode, GetLastErrorText(), GetLastErrorCallStack);
+                    end;
+                end;
+            }
+
             action(AdminPermissions)
             {
                 ApplicationArea = All;

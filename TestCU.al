@@ -36,3 +36,35 @@
 //         isModified := itm.Modify(false);
 //     end;
 // }
+
+codeunit 50120 SpecialCharsTest
+{
+    trigger OnRun()
+    var
+        itm: Record Item;
+        res: Boolean;
+    begin
+        // Clear(itm);
+        // //itm.SetRange("No.", 'ITEM(ONE');
+        // res := itm.Get('ITEM(ONE');
+        // itm.SetFilter("No.", 'ITEM(ONE');
+        // if itm.FindFirst() then begin
+        //     Message('Item Reading is done');
+        // end;
+    end;
+
+    [TryFunction]
+    procedure ReadProducts()
+    var
+        itm: Record Item;
+        res: Boolean;
+    begin
+        Clear(itm);
+        //itm.SetRange("No.", 'ITEM(ONE');
+        res := itm.Get('ITEM(ONE');
+        itm.SetFilter("No.", 'ITEM(ONE');
+        if itm.FindFirst() then begin
+            Message('Item Reading is done');
+        end;
+    end;
+}

@@ -27,7 +27,9 @@ tableextension 50102 HelixCustomerTableExt extends Customer
 
     trigger OnAfterModify()
     begin
+        //if Rec.SyncStatus <> HelixEntitySyncStatus::Complete then begin
         SyncStatus := HelixEntitySyncStatus::Pending;
         Rec.Modify(false);
+        //end;
     end;
 }

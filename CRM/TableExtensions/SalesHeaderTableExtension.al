@@ -10,7 +10,9 @@ tableextension 50104 HelixSalesHeaderTableExt extends "Sales Header"
 
     trigger OnAfterModify()
     begin
+        //if Rec.SyncStatus <> HelixEntitySyncStatus::Complete then begin
         Rec.SyncStatus := HelixEntitySyncStatus::Pending;
         rec.Modify(false);
+        //end;
     end;
 }

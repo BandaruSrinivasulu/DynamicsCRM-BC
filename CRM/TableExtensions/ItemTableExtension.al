@@ -36,6 +36,8 @@ tableextension 50103 HelixItemTableExt extends Item
 
     trigger OnAfterModify()
     begin
+        //if Rec.SyncStatus <> HelixEntitySyncStatus::Complete then begin
         SyncStatus := HelixEntitySyncStatus::Pending;
+        //end;
     end;
 }
